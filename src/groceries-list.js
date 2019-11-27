@@ -60,6 +60,7 @@ export class GroceryItem extends LitElement {
   render() {
     return html`
       <div>
+        <div>Note: </div>
         <dismissable-item @remove=${this.onremove} role="listitem" class="mdc-list-item">
           <mwc-checkbox @change=${this.onchange} ?checked=${this.checked}></mwc-checkbox>
           <span class="mdc-list-item__text">
@@ -135,22 +136,25 @@ export class GroceriesList extends LitElement {
     this._store.addEventListener('change', onchange);
     onchange();
 
-    try {
-      const reader = new NDEFReader();
-      const scanOption = { recordType: "mime" };
-      reader.addEventListener("reading", ev => {
+    const onscan = async () => {
+      try {
+        const reader = new NDEFReader();
+        const scanOption = { recordType: "mime" };
+        reader.addEventListener("reading", ev => {
         const decoder = new TextDecoder();
-        for (let record of ev.message.records) {
-          const data = JSON.parse(decoder.decode(record.data));
-          if (data.product) {
-            this._store.set(data.product, data.description);
+          for (let record of ev.message.records) {
+            const data = JSON.parse(decoder.decode(record.data));
+            if (data.product) {
+              this._store.set(data.product, data.description);
+            }
           }
-        }
-      });
-      reader.scan(scanOption);
-    } catch(err) {
-      console.error("Reading NFC tags is not supported");
+        });
+        await reader.scan(scanOption);
+      } catch(err) {
+        console.error("Reading NFC tags is not supported");
+      }
     }
+    onscan();
   }
 
   _onchange(ev) {
